@@ -10,13 +10,27 @@ import os
 BASE_DIR = os.path.dirname(__file__)
 CHROMA_PATH = os.path.join(BASE_DIR, "data", "chroma_db")
 PDF_PATH = os.path.join(BASE_DIR, "data", "AttentionAllYouNeed.pdf")
+DEFAULT_GROQ_MODEL = "llama3-8b-8192"
+INVALID_GROQ_MODELS = {"llama-3.3-70b-versatile"}
 
 
 def get_groq_model_name():
     configured_model = (os.getenv("GROQ_MODEL_NAME") or "").strip()
-    if configured_model and configured_model != "llama-3.3-70b-versatile":
-        return configured_model
-    return "llama3-8b-8192"
+    if configured_model:
+        normalized_model = configured_model.strip().lower()
+        if normalized_model not in INVALID_GROQ_MODELS and normalized_model != "":
+            return configured_model
+    return DEFAULT_GROQ_MODEL
+
+
+def create_llm(api_key):
+    preferred_model = get_groq_model_name()
+    try:
+        return ChatGroq(model=preferred_model, api_key=api_key)
+    except Exception as exc:
+        if preferred_model != DEFAULT_GROQ_MODEL and "model" in str(exc).lower():
+            return ChatGroq(model=DEFAULT_GROQ_MODEL, api_key=api_key)
+        raise
 
 
 def format_docs(docs):
@@ -34,7 +48,7 @@ def initialize_rag():
     else:
         vector_store = Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=CHROMA_PATH)
 
-    llm = ChatGroq(model=get_groq_model_name(), api_key=os.getenv("GROQ_API_KEY"))
+    llm = create_llm(os.getenv("GROQ_API_KEY"))
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", (

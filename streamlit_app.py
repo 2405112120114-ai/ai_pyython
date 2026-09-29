@@ -409,11 +409,28 @@ html, body, .stApp {
 """, unsafe_allow_html=True)
 
 # ── RAG Pipeline ────────────────────────────────────────────
+DEFAULT_GROQ_MODEL = "llama3-8b-8192"
+INVALID_GROQ_MODELS = {"llama-3.3-70b-versatile"}
+
+
 def get_groq_model_name():
     configured_model = (st.secrets.get("GROQ_MODEL_NAME") or os.getenv("GROQ_MODEL_NAME") or "").strip()
-    if configured_model and configured_model != "llama-3.3-70b-versatile":
-        return configured_model
-    return "llama3-8b-8192"
+    if configured_model:
+        normalized_model = configured_model.strip().lower()
+        if normalized_model not in INVALID_GROQ_MODELS and normalized_model != "":
+            return configured_model
+    return DEFAULT_GROQ_MODEL
+
+
+def create_llm(api_key):
+    preferred_model = get_groq_model_name()
+    try:
+        return ChatGroq(model=preferred_model, api_key=api_key)
+    except Exception as exc:
+        if preferred_model != DEFAULT_GROQ_MODEL and "model" in str(exc).lower():
+            return ChatGroq(model=DEFAULT_GROQ_MODEL, api_key=api_key)
+        raise
+
 
 @st.cache_resource(show_spinner="🔧 Initializing RAG pipeline...")
 def load_rag():
@@ -426,7 +443,7 @@ def load_rag():
     vectorstore = Chroma.from_documents(chunks, embedding=embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
-    llm = ChatGroq(model=get_groq_model_name(), api_key=groq_api_key)
+    llm = create_llm(groq_api_key)
     prompt = ChatPromptTemplate.from_messages([
         ("system", (
             "You are an expert AI research assistant specializing in the 'Attention Is All You Need' paper. "
