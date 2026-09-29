@@ -11,6 +11,14 @@ BASE_DIR = os.path.dirname(__file__)
 CHROMA_PATH = os.path.join(BASE_DIR, "data", "chroma_db")
 PDF_PATH = os.path.join(BASE_DIR, "data", "AttentionAllYouNeed.pdf")
 
+
+def get_groq_model_name():
+    configured_model = (os.getenv("GROQ_MODEL_NAME") or "").strip()
+    if configured_model and configured_model != "llama-3.3-70b-versatile":
+        return configured_model
+    return "llama3-8b-8192"
+
+
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
@@ -26,7 +34,7 @@ def initialize_rag():
     else:
         vector_store = Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=CHROMA_PATH)
 
-    llm = ChatGroq(model="llama3-8b-8192", api_key=os.getenv("GROQ_API_KEY"))
+    llm = ChatGroq(model=get_groq_model_name(), api_key=os.getenv("GROQ_API_KEY"))
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", (

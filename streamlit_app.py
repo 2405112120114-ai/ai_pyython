@@ -409,6 +409,12 @@ html, body, .stApp {
 """, unsafe_allow_html=True)
 
 # ── RAG Pipeline ────────────────────────────────────────────
+def get_groq_model_name():
+    configured_model = (st.secrets.get("GROQ_MODEL_NAME") or os.getenv("GROQ_MODEL_NAME") or "").strip()
+    if configured_model and configured_model != "llama-3.3-70b-versatile":
+        return configured_model
+    return "llama3-8b-8192"
+
 @st.cache_resource(show_spinner="🔧 Initializing RAG pipeline...")
 def load_rag():
     pdf_path = os.path.join(os.path.dirname(__file__), "backend", "data", "AttentionAllYouNeed.pdf")
@@ -420,7 +426,7 @@ def load_rag():
     vectorstore = Chroma.from_documents(chunks, embedding=embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
-    llm = ChatGroq(model="llama-3.3-70b-versatile", api_key=groq_api_key)
+    llm = ChatGroq(model=get_groq_model_name(), api_key=groq_api_key)
     prompt = ChatPromptTemplate.from_messages([
         ("system", (
             "You are an expert AI research assistant specializing in the 'Attention Is All You Need' paper. "
