@@ -409,8 +409,12 @@ html, body, .stApp {
 """, unsafe_allow_html=True)
 
 # ── RAG Pipeline ────────────────────────────────────────────
-DEFAULT_GROQ_MODEL = "llama3-8b-8192"
-INVALID_GROQ_MODELS = {"llama-3.3-70b-versatile"}
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
+INVALID_GROQ_MODELS = {
+    "llama-3.3-70b-versatile",
+    "llama3-8b-8192",
+    "llama-3.1-8b-instant",
+}
 
 
 def get_groq_model_name():

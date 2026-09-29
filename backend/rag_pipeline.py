@@ -10,8 +10,12 @@ import os
 BASE_DIR = os.path.dirname(__file__)
 CHROMA_PATH = os.path.join(BASE_DIR, "data", "chroma_db")
 PDF_PATH = os.path.join(BASE_DIR, "data", "AttentionAllYouNeed.pdf")
-DEFAULT_GROQ_MODEL = "llama3-8b-8192"
-INVALID_GROQ_MODELS = {"llama-3.3-70b-versatile"}
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
+INVALID_GROQ_MODELS = {
+    "llama-3.3-70b-versatile",
+    "llama3-8b-8192",
+    "llama-3.1-8b-instant",
+}
 
 
 def get_groq_model_name():
