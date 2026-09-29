@@ -423,6 +423,9 @@ def get_groq_model_name():
 
 
 def create_llm(api_key):
+    if not api_key or not str(api_key).strip():
+        raise ValueError("Missing GROQ_API_KEY. Add it in Streamlit Cloud secrets or environment variables.")
+
     preferred_model = get_groq_model_name()
     try:
         return ChatGroq(model=preferred_model, api_key=api_key)
@@ -443,6 +446,9 @@ def load_rag():
     vectorstore = Chroma.from_documents(chunks, embedding=embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+    if not groq_api_key or not str(groq_api_key).strip():
+        st.error("GROQ_API_KEY is missing. Add it in Streamlit Cloud → Settings → Secrets, or set it in the app environment.")
+        st.stop()
     llm = create_llm(groq_api_key)
     prompt = ChatPromptTemplate.from_messages([
         ("system", (
